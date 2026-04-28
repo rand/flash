@@ -1,20 +1,20 @@
 import os
 
-# Worker runtime Python versions. One tarball serves every resource in an app,
-# so all resources must share a single Python version. GPU images ship 3.12
-# with torch pre-installed; 3.10 and 3.11 are available via side-by-side
-# install (~7 GB alt-Python overhead) in the same base image.
-WORKER_PYTHON_VERSION: str = "3.12"
-GPU_PYTHON_VERSIONS: tuple[str, ...] = ("3.10", "3.11", "3.12")
-CPU_PYTHON_VERSIONS: tuple[str, ...] = ("3.10", "3.11", "3.12")
+# Single source of truth for Python versions Flash supports end-to-end.
+# Phase 1 of AE-2827 publishes native per-version worker images for each.
+SUPPORTED_PYTHON_VERSIONS: tuple[str, ...] = ("3.10", "3.11", "3.12", "3.13")
 
-# Base image ships 3.12 with torch pre-installed; non-3.12 targets reinstall
-# torch side-by-side for the selected interpreter.
-GPU_BASE_IMAGE_PYTHON_VERSION: str = "3.12"
+# DEFAULT_PYTHON_VERSION drives the :latest tag aliases on Docker Hub
+# (runpod/flash:latest -> runpod/flash:py3.12-latest). It is NOT a fallback
+# the SDK reaches for — _reconcile_python_version uses sys.version_info
+# when no override or per-resource declaration is set.
 DEFAULT_PYTHON_VERSION: str = "3.12"
 
-# Python versions that can run the flash SDK locally (for flash build, etc.)
-SUPPORTED_PYTHON_VERSIONS: tuple[str, ...] = ("3.10", "3.11", "3.12")
+# Per-image-type Python sets are now uniform — native per-version images
+# cover GPU and CPU equally. Aliased to SUPPORTED_PYTHON_VERSIONS for any
+# downstream callers that still reference the old names.
+GPU_PYTHON_VERSIONS: tuple[str, ...] = SUPPORTED_PYTHON_VERSIONS
+CPU_PYTHON_VERSIONS: tuple[str, ...] = SUPPORTED_PYTHON_VERSIONS
 
 
 def local_python_version() -> str:
