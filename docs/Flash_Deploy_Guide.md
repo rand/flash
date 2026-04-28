@@ -6,22 +6,26 @@ This guide walks through deploying a Flash application from local development to
 
 ## Prerequisites
 
-- Python 3.10, 3.11, or 3.12
+- Python 3.10, 3.11, 3.12, or 3.13
 - `pip install runpod-flash`
 - A Runpod account with API key ([get one here](https://docs.runpod.io/get-started/api-keys))
 
 ### Python version selection
 
-Flash apps ship as a single tarball, so every resource in an app shares one Python version. The worker runtime defaults to 3.12 (the version torch is pre-installed for in the GPU base image). Select a different version in two ways:
+Flash workers support Python 3.10, 3.11, 3.12, and 3.13. Native per-version images mean each interpreter has torch, numpy, and the worker runtime built directly for it — no side-by-side overhead, no cold-start tax for non-default versions.
 
-- **Per-resource declaration**: set `python_version="3.11"` on any resource config — all resources in the same app must agree or leave it unset.
-- **App-level override**: pass `--python-version 3.11` to `flash build` or `flash deploy`. The override wins over per-resource values that are unset and must match any that are set.
+By default, `flash build` and `flash deploy` target the Python version you're running flash from. If you're on 3.11 locally, your deploy runs on 3.11; on 3.13, it runs on 3.13. The build prints the resolved version and its source on the first line of output.
 
-| Version | Status | GPU cold-start | Notes |
-|---------|--------|----------------|-------|
-| 3.10 | Supported (EOL 2026-10-31) | +~7 GB alt-Python install | Consider migrating to 3.11 before EOL |
-| 3.11 | Supported | +~7 GB alt-Python install | |
-| 3.12 | Supported (default) | No overhead | Torch pre-installed in base image |
+You can override the choice in two ways:
+
+- **CLI flag:** `flash build --python-version 3.12` or `flash deploy --python-version 3.12`. Validated against the supported set.
+- **Per-resource declaration:** set `python_version="3.12"` on any `LiveServerless`, `CpuLiveServerless`, `LiveLoadBalancer`, or `CpuLiveLoadBalancer` config. The build reconciles to the declared value (or raises if resources disagree).
+
+For projects shared across a team, declare `python_version` explicitly on each resource config. That makes the deploy result identical regardless of who runs `flash build` and what Python they happen to have installed locally — useful when team members and CI run different interpreters.
+
+Flash will refuse to build if your local Python is outside the supported set (e.g. 3.9 or 3.14). The error message tells you to pass `--python-version`, declare on a resource, or upgrade your interpreter.
+
+The `runpod/flash:latest`, `runpod/flash-lb:latest`, `runpod/flash-cpu:latest`, and `runpod/flash-lb-cpu:latest` aliases all point at the 3.12 image variant — Dockerfiles or compose files that pin `:latest` will keep getting 3.12. Use the `:py3.X-{tag}` form for explicit version pinning.
 
 ## Quick Start
 
